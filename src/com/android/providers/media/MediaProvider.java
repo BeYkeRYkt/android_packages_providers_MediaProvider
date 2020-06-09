@@ -2945,6 +2945,7 @@ public class MediaProvider extends ContentProvider {
             return attachedVolume;
         }
 
+        boolean triggerScan = false;
         String genre = null;
         String path = null;
         String ownerPackageName = null;
@@ -2976,6 +2977,13 @@ public class MediaProvider extends ContentProvider {
             }
             if (initialValues.containsKey(ImageColumns.LONGITUDE)) {
                 initialValues.putNull(ImageColumns.LONGITUDE);
+            }
+
+            // If IS_PENDING is absent or equal to 0, consider that the file 
+            // is ready for scanning.
+            if (!initialValues.containsKey(MediaColumns.IS_PENDING)
+                    || initialValues.getAsInteger(MediaColumns.IS_PENDING) == 0) {
+                triggerScan = true;
             }
 
             if (isCallingPackageSystem()) {
@@ -3270,8 +3278,14 @@ public class MediaProvider extends ContentProvider {
         // permission checks for this caller
         mCallingIdentity.get().setOwned(rowId, true);
 
-        if (path != null && path.toLowerCase(Locale.US).endsWith("/.nomedia")) {
-            MediaScanner.instance(getContext()).scanFile(new File(path).getParentFile());
+        if (triggerScan) {
+            if (path != null) {
+                if (path.toLowerCase(Locale.US).endsWith("/.nomedia")) {
+                    MediaScanner.instance(getContext()).scanFile(new File(path).getParentFile());
+                } else {
+                    MediaScanner.instance(getContext()).scanFile(new File(path));
+                }
+            }
         }
 
         if (newUri != null) {
