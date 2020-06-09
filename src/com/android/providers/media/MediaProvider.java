@@ -2695,7 +2695,12 @@ public class MediaProvider extends ContentProvider {
             if (path != null) {
                 File file = new File(path);
                 if (file.exists()) {
-                    values.put(FileColumns.DATE_MODIFIED, file.lastModified() / 1000);
+                    if (!values.containsKey(MediaColumns.IS_PENDING)
+                            || values.getAsInteger(MediaColumns.IS_PENDING) == 0) {
+                        values.put(FileColumns.DATE_MODIFIED, System.currentTimeMillis() / 1000);
+                    } else {
+                        values.put(FileColumns.DATE_MODIFIED, file.lastModified() / 1000);
+                    }
                     if (!values.containsKey(FileColumns.SIZE)) {
                         values.put(FileColumns.SIZE, file.length());
                     }
